@@ -1,0 +1,43 @@
+services:
+  db:
+    image: postgres:17.6
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: massage_match
+      POSTGRES_USER: app
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD in .env}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U app -d massage_match"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - internal
+    security_opt:
+      - no-new-privileges:true
+
+  bot:
+    build: .
+    restart: unless-stopped
+    init: true
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgresql://app:${DB_PASSWORD}@db:5432/massage_match
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - internal
+    security_opt:
+      - no-new-privileges:true
+    stop_grace_period: 30s
+
+volumes:
+  postgres_data:
+
+networks:
+  internal:
+    driver: bridge
