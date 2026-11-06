@@ -5,14 +5,14 @@ export async function updateSellerProfile(userId, data) {
     `UPDATE seller_profiles sp
      SET bio = $2, photo_file_id = COALESCE($3, sp.photo_file_id),
          category = $4, city = $5, address_text = $6,
-         public_username = $7, availability = $8,
+         public_username = NULL, public_alias = $7, availability = $8,
          moderation_status = 'pending', updated_at = NOW()
      FROM users u
      WHERE sp.user_id = u.id AND sp.user_id = $1
        AND u.role = 'seller' AND u.status = 'active'
      RETURNING sp.*`,
     [userId, data.bio, data.photoFileId || null, data.category, data.city,
-      data.addressText || null, data.publicUsername || null, data.availability || "unknown"]
+      data.addressText || null, data.publicAlias || null, data.availability || "unknown"]
   );
   if (!result.rowCount) throw new Error("Profil seller tidak ditemukan atau akun tidak aktif.");
   return result.rows[0];

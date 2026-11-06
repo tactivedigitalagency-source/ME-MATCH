@@ -7,6 +7,7 @@ import { registerRegistrationHandlers } from "./handlers/registration.js";
 import { registerSellerHandlers } from "./handlers/seller.js";
 import { registerBuyerHandlers } from "./handlers/buyer.js";
 import { registerContactHandlers } from "./handlers/contact.js";
+import { registerRelayHandlers } from "./handlers/relay.js";
 import { registerAdminHandlers } from "./handlers/admin.js";
 
 export function createBot() {
@@ -19,6 +20,7 @@ export function createBot() {
   registerBuyerHandlers(bot);
   registerContactHandlers(bot);
   registerAdminHandlers(bot);
+  registerRelayHandlers(bot);
 
   bot.catch((err, ctx) => {
     logger.error({ updateId: ctx.update?.update_id, err: err.message }, "Telegram handler failed");
