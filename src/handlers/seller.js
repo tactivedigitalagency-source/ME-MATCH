@@ -89,7 +89,7 @@ export function registerSellerHandlers(bot) {
         await ctx.reply("Kirim nama samaran profil (3–40 karakter). Jangan masukkan nomor, username Telegram, atau alamat lengkap.");
       } else {
         const alias = t.slice(0, 40).trim();
-        if (alias.length < 3 || /(?:@|\\d{6,}|https?:\\/\\/|t\\.me)/i.test(alias)) {
+        if (alias.length < 3 || alias.includes("@") || alias.includes("http") || alias.includes("t.me") || /[0-9]{6,}/.test(alias)) {
           await ctx.reply("Nama samaran harus 3–40 karakter tanpa nomor kontak, @, atau tautan.");
           return;
         }
