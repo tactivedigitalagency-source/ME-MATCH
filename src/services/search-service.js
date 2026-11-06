@@ -35,8 +35,8 @@ export async function searchSellers({ city, category, maxPrice, offset = 0, buye
   const offsetParam = values.length;
 
   const result = await pool.query(
-    `SELECT u.id AS user_id, u.telegram_id, u.display_name, u.username,
-            sp.bio, sp.photo_file_id, sp.category, sp.city, sp.public_username,
+    `SELECT u.id AS user_id, u.telegram_id, sp.public_alias,
+            sp.bio, sp.photo_file_id, sp.category, sp.city,
             sp.availability,
             (SELECT COUNT(*) FROM services s WHERE s.seller_id = u.id AND s.active = TRUE) AS service_count
      FROM users u
@@ -51,7 +51,7 @@ export async function searchSellers({ city, category, maxPrice, offset = 0, buye
 
 export async function getSellerDetails(sellerId, buyerId) {
   const result = await pool.query(
-    `SELECT u.id AS user_id, u.telegram_id, u.display_name, sp.*
+    `SELECT u.id AS user_id, sp.*
      FROM users u JOIN seller_profiles sp ON sp.user_id = u.id
      WHERE u.id = $1 AND u.status = 'active'
        AND u.role = 'seller' AND sp.moderation_status = 'approved'
