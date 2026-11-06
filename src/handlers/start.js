@@ -14,16 +14,15 @@ export function registerStartHandlers(bot) {
         await ctx.reply("Akun Anda sedang ditangguhkan. Hubungi admin jika perlu peninjauan.");
         return;
       }
-      await ctx.reply(`Selamat datang kembali, ${u.display_name || "Pengguna"}.\nGunakan /profile, /browse, atau /seller.`);
+      await ctx.reply(`Selamat datang kembali di MassageMatch.\nPelanggan: /browse\nTerapis: /seller\nChat anonim: /rooms\nProfil: /profile`);
       return;
     }
 
     await ctx.reply(
-      `Selamat datang di LC Companion.\n\n` +
-      `Layanan pendamping sosial nonseksual: teman karaoke, ngobrol, dan acara. Tidak menerima layanan seksual. Pertemuan harus berdasarkan persetujuan bersama; siapa pun dapat menolak atau mengakhiri layanan.\n\nPlatform ini khusus pengguna berusia ${env.MIN_AGE}+ tahun. Dengan melanjutkan, Anda menyatakan usia Anda memenuhi batas minimum dan menyetujui ketentuan penggunaan serta kebijakan privasi.\n\nPilih peran:`,
+      `👋 Selamat datang di MassageMatch!\\n\\nTemukan layanan pijat sesuai kota. Ajukan booking melalui bot, lalu chat anonim jika terapis menyetujui.\\n\\nTidak ada tautan website dan identitas pribadi tidak ditampilkan.\\n\\nKhusus usia ${env.MIN_AGE}+; dengan melanjutkan Anda menyetujui ketentuan dan kebijakan privasi.\\n\\nPilih peran:`,
       Markup.inlineKeyboard([
-        [Markup.button.callback("Daftar sebagai Buyer", "register:buyer")],
-        [Markup.button.callback("Daftar sebagai Seller", "register:seller")]
+        [Markup.button.callback("Daftar Pelanggan", "register:buyer")],
+        [Markup.button.callback("Daftar Terapis", "register:seller")]
       ])
     );
   });
