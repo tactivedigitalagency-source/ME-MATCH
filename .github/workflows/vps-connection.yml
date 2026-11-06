@@ -1,0 +1,92 @@
+name: VPS connection (safe, manual)
+
+# Does NOT rebuild VPS, restart containers, migrate databases, or change the live bot.
+on:
+  workflow_dispatch:
+    inputs:
+      operation:
+        description: "Check SSH connection, or upload source files to a separate staging directory"
+        type: choice
+        required: true
+        default: check
+        options:
+          - check
+          - stage
+      git_ref:
+        description: "GitHub branch/tag to stage (used only for stage)"
+        type: string
+        default: feature/telegram-private-relay-mvp
+        required: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: massagematch-vps-safe-connection
+  cancel-in-progress: false
+
+jobs:
+  connect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      VPS_HOST: ${{ secrets.VPS_HOST }}
+      VPS_USER: ${{ secrets.VPS_USER }}
+      VPS_SSH_PORT: ${{ secrets.VPS_SSH_PORT }}
+      VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+      VPS_KNOWN_HOSTS: ${{ secrets.VPS_KNOWN_HOSTS }}
+    steps:
+      - name: Check required secrets
+        shell: bash
+        run: |
+          set -euo pipefail
+          for v in VPS_HOST VPS_USER VPS_SSH_KEY VPS_KNOWN_HOSTS; do
+            if [[ -z "${!v:-}" ]]; then
+              echo "::error title=Missing GitHub secret::Configure $v in Settings > Secrets and variables > Actions."
+              exit 1
+            fi
+          done
+      - name: Configure SSH (strict host verification)
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/vps-ssh"
+          printf '%s\n' "$VPS_SSH_KEY" > "$RUNNER_TEMP/vps-ssh/deploy_key"
+          printf '%s\n' "$VPS_KNOWN_HOSTS" > "$RUNNER_TEMP/vps-ssh/known_hosts"
+          chmod 600 "$RUNNER_TEMP/vps-ssh/deploy_key" "$RUNNER_TEMP/vps-ssh/known_hosts"
+      - name: Verify access (read-only)
+        shell: bash
+        run: |
+          set -euo pipefail
+          PORT="${VPS_SSH_PORT:-22}"
+          ssh -i "$RUNNER_TEMP/vps-ssh/deploy_key" \
+            -o BatchMode=yes -o IdentitiesOnly=yes \
+            -o StrictHostKeyChecking=yes \
+            -o UserKnownHostsFile="$RUNNER_TEMP/vps-ssh/known_hosts" \
+            -o ConnectTimeout=12 -p "$PORT" \
+            -- "$VPS_USER@$VPS_HOST" \
+            'echo "SSH connected"; whoami; hostname; command -v docker >/dev/null && docker --version || true'
+      - name: Checkout chosen code
+        if: ${{ inputs.operation == 'stage' }}
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.git_ref }}
+          persist-credentials: false
+      - name: Upload staging code ONLY (no deploy / no database changes)
+        if: ${{ inputs.operation == 'stage' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          PORT="${VPS_SSH_PORT:-22}"
+          SSH_CMD="ssh -i $RUNNER_TEMP/vps-ssh/deploy_key -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o UserKnownHostsFile=$RUNNER_TEMP/vps-ssh/known_hosts -p $PORT"
+          $SSH_CMD -- "$VPS_USER@$VPS_HOST" 'mkdir -p "$HOME/massagematch-stage"'
+          rsync -az \
+            --exclude '.git/' \
+            --exclude '.github/' \
+            --exclude '.env' \
+            --exclude 'node_modules/' \
+            --exclude '*.key' \
+            --exclude '*.pem' \
+            -e "$SSH_CMD" \
+            ./ "$VPS_USER@$VPS_HOST:massagematch-stage/"
+          echo "Source uploaded to ~/massagematch-stage only. No service restarted."
