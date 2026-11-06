@@ -49,7 +49,7 @@ export function registerSellerHandlers(bot) {
     const r = await pool.query("SELECT * FROM seller_profiles WHERE user_id = $1", [ctx.state.user.id]);
     if (!r.rowCount) return ctx.reply("Profil belum tersedia. Gunakan /setprofile.");
     const p = r.rows[0];
-    await ctx.reply(`Status moderasi: ${p.moderation_status}\nKota: ${p.city}\nKategori: ${p.category || "-"}\nUsername publik: ${p.public_username ? "@" + p.public_username : "belum diatur"}`);
+    await ctx.reply(`Status moderasi: ${p.moderation_status}\nKota: ${p.city}\nKategori: ${p.category || "-"}\nNama samaran: ${p.public_alias || "Terapis #" + ctx.state.user.id}`);
   });
 
   bot.action(/^seller:avail:(available|unavailable)$/, requireActiveUser, requireRole("seller"), async (ctx) => {
@@ -86,14 +86,14 @@ export function registerSellerHandlers(bot) {
       } else if (session.step === 2) {
         session.data.bio = t.slice(0, 1000);
         session.step++;
-        await ctx.reply("Kirim username Telegram publik Anda tanpa @ (5–32 karakter). Pastikan username benar agar buyer dapat menghubungi Anda.");
+        await ctx.reply("Kirim nama samaran profil (3–40 karakter). Jangan masukkan nomor, username Telegram, atau alamat lengkap.");
       } else {
-        const username = t.replace(/^@/, "");
-        if (!/^[A-Za-z0-9_]{5,32}$/.test(username)) {
-          await ctx.reply("Format username tidak valid. Kirim 5–32 huruf, angka, atau underscore.");
+        const alias = t.slice(0, 40).trim();
+        if (alias.length < 3 || /(?:@|\\d{6,}|https?:\\/\\/|t\\.me)/i.test(alias)) {
+          await ctx.reply("Nama samaran harus 3–40 karakter tanpa nomor kontak, @, atau tautan.");
           return;
         }
-        session.data.publicUsername = username;
+        session.data.publicAlias = alias;
         try {
           await updateSellerProfile(user.id, {
             ...session.data,
