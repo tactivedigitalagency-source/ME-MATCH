@@ -19,7 +19,7 @@ export function registerStartHandlers(bot) {
     }
 
     await ctx.reply(
-      `👋 Selamat datang di MassageMatch!\\n\\nTemukan layanan pijat sesuai kota. Ajukan booking melalui bot, lalu chat anonim jika terapis menyetujui.\\n\\nTidak ada tautan website dan identitas pribadi tidak ditampilkan.\\n\\nKhusus usia ${env.MIN_AGE}+; dengan melanjutkan Anda menyetujui ketentuan dan kebijakan privasi.\\n\\nPilih peran:`,
+      `👋 Selamat datang di MassageMatch!\n\nTemukan layanan pijat sesuai kota. Ajukan booking melalui bot, lalu chat anonim jika terapis menyetujui.\n\nTidak ada tautan website dan identitas pribadi tidak ditampilkan.\n\nKhusus usia ${env.MIN_AGE}+; dengan melanjutkan Anda menyetujui ketentuan dan kebijakan privasi.\n\nPilih peran:`,
       Markup.inlineKeyboard([
         [Markup.button.callback("Daftar Pelanggan", "register:buyer")],
         [Markup.button.callback("Daftar Terapis", "register:seller")]
