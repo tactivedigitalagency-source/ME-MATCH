@@ -17,3 +17,6 @@ CREATE INDEX IF NOT EXISTS idx_bookings_seller_requests
   ON bookings (seller_id, created_at DESC) WHERE status = 'requested';
 CREATE INDEX IF NOT EXISTS idx_bookings_buyer_relay
   ON bookings (buyer_id, created_at DESC) WHERE status IN ('requested', 'confirmed');
+
+-- Only bookings explicitly accepted by the therapist may open anonymous relay.
+ALTER TABLE bookings ADD COLUMN IF NOT EXISTS relay_approved_at TIMESTAMPTZ;
