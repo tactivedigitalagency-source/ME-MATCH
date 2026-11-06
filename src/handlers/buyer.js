@@ -3,7 +3,6 @@ import { requireActiveUser } from "../middleware/require-user.js";
 import { requireRole } from "../middleware/require-role.js";
 import { searchSellers, listServicesForSeller, getSellerDetails } from "../services/search-service.js";
 import { addFavorite, blockUser, reportUser } from "../services/safety-service.js";
-import { telegramProfileUrl } from "../utils/telegram-links.js";
 import { pool } from "../db/pool.js";
 
 const searchState = new Map();
@@ -49,9 +48,8 @@ export function registerBuyerHandlers(bot) {
     const seller = await getSellerDetails(sellerId, ctx.state.user.id);
     if (!seller) return ctx.reply("Profil seller tidak tersedia.");
     const services = await listServicesForSeller(sellerId);
-    const url = telegramProfileUrl(seller.public_username);
     const lines = [
-      `Seller: ${seller.display_name || "Seller"}`,
+      `Terapis: ${seller.public_alias || `Terapis #${seller.user_id}`}`,
       `Kategori: ${seller.category || "-"}`,
       `Kota: ${seller.city}`,
       `Ketersediaan: ${seller.availability}`,
@@ -69,7 +67,9 @@ export function registerBuyerHandlers(bot) {
       [Markup.button.callback("Laporkan", `report:${sellerId}`)],
       [Markup.button.callback("Blokir", `block:${sellerId}`)]
     ];
-    if (url) buttons.unshift([Markup.button.url("Hubungi di Telegram", url)]);
+    for (const service of services.slice(0, 10)) {
+      buttons.unshift([Markup.button.callback(`Ajukan booking #${service.id} — Rp${Number(service.price_idr).toLocaleString("id-ID")}`, `relay_request:${service.id}`)]);
+    }
     await ctx.reply(lines.join("\n"), Markup.inlineKeyboard(buttons));
   });
 
@@ -147,14 +147,10 @@ async function showResults(ctx, state) {
   for (const seller of rows) {
     const services = await listServicesForSeller(seller.user_id);
     const price = services.length ? `Mulai Rp${Math.min(...services.map((s) => Number(s.price_idr))).toLocaleString("id-ID")}` : "Belum ada layanan aktif";
-    const text = `${seller.display_name || "Seller"}\n${seller.category || "Kategori belum diatur"}\nKota: ${seller.city}\n${price}\nKetersediaan: ${seller.availability}`;
+    const text = `${seller.public_alias || `Terapis #${seller.user_id}`}\n${seller.category || "Kategori belum diatur"}\nKota: ${seller.city}\n${price}\nKetersediaan: ${seller.availability}`;
     const keyboard = Markup.inlineKeyboard([
       [Markup.button.callback("Lihat profil & layanan", `seller_view:${seller.user_id}`)]
     ]);
-    if (seller.photo_file_id) {
-      await ctx.replyWithPhoto(seller.photo_file_id, { caption: text, ...keyboard });
-    } else {
-      await ctx.reply(text, keyboard);
-    }
+    await ctx.reply(text, keyboard);
   }
 }
